@@ -4,9 +4,8 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="Merak">
-    <meta name="description" content="ThreadPoolExecutor写在前面1.1 线程池是什么线程池（Thread Pool）是一种基于池化思想管理线程的工具，经常出现在多线程服务器中，如MySQL。
-线程过多会带来额外的开销，其中包括创建销毁线程的开销、调度线程的开销">
+    <meta name="keywords" content="ThreadPoolExecutor源码, Merak">
+    <meta name="description" content="线程池是一种基于池化思想管理线程的工具，经常出现在多线程服务器中，使用线程池可以带来一系列好处，本文描述的线程池是JDK中提供的ThreadPoolExecutor类。">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -18,7 +17,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>Merak</title>
+    <title>ThreadPoolExecutor源码 | Merak</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
 
@@ -336,12 +335,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/0.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/2.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title"></h1>
+                    <h1 class="description center-align post-title">ThreadPoolExecutor源码</h1>
                 </div>
             </div>
         </div>
@@ -363,12 +362,29 @@
             <div class="row tag-cate">
                 <div class="col s7">
                     
-                          <div class="article-tag">
-                            <span class="chip bg-color">无标签</span>
-                          </div>
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Thread/">
+                                <span class="chip bg-color">Thread</span>
+                            </a>
+                        
+                            <a href="/tags/ThreadPool/">
+                                <span class="chip bg-color">ThreadPool</span>
+                            </a>
+                        
+                    </div>
                     
                 </div>
                 <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/Thread/" class="post-category">
+                                Thread
+                            </a>
+                        
+                    </div>
                     
                 </div>
             </div>
@@ -384,7 +400,17 @@
                 
 
                 
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    8.6k
+                </div>
+                
 
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    34 分
+                </div>
                 
 
                 
@@ -403,7 +429,7 @@
             <div id="articleContent">
                 <h1 id="ThreadPoolExecutor"><a href="#ThreadPoolExecutor" class="headerlink" title="ThreadPoolExecutor"></a>ThreadPoolExecutor</h1><h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h2><h3 id="1-1-线程池是什么"><a href="#1-1-线程池是什么" class="headerlink" title="1.1 线程池是什么"></a>1.1 线程池是什么</h3><p>线程池（Thread Pool）是一种基于池化思想管理线程的工具，经常出现在多线程服务器中，如MySQL。</p>
 <p>线程过多会带来额外的开销，其中包括创建销毁线程的开销、调度线程的开销等等，同时也降低了计算机的整体性能。线程池维护多个线程，等待监督管理者分配可并发执行的任务。这种做法，一方面避免了处理任务时创建销毁线程开销的代价，另一方面避免了线程数量膨胀导致的过分调度问题，保证了对内核的充分利用。</p>
-<p>而本文描述线程池是JDK中提供的ThreadPoolExecutor类。</p>
+<p>而本文描述的线程池是JDK中提供的ThreadPoolExecutor类。</p>
 <p>当然，使用线程池可以带来一系列好处：</p>
 <ul>
 <li><strong>降低资源消耗</strong>：通过池化技术重复利用已创建的线程，降低线程创建和销毁造成的损耗。</li>
@@ -419,40 +445,31 @@
 </ol>
 <p>为解决资源分配这个问题，线程池采用了“池化”（Pooling）思想。池化，顾名思义，是为了最大化收益并最小化风险，而将资源统一在一起管理的一种思想。</p>
 <h2 id="线程池核心设计与实现"><a href="#线程池核心设计与实现" class="headerlink" title="线程池核心设计与实现"></a>线程池核心设计与实现</h2><h3 id="2-1-总体设计"><a href="#2-1-总体设计" class="headerlink" title="2.1 总体设计"></a>2.1 总体设计</h3><p> ThreadPoolExecutor实现的顶层接口是Executor，顶层接口Executor提供了一种思想：==将任务提交和任务执行进行解耦==。用户无需关注如何创建线程，如何调度线程来执行任务，用户只需提供Runnable对象，将任务的运行逻辑提交到执行器(Executor)中，由Executor框架完成线程的调配和任务的执行部分。ExecutorService接口增加了一些能力：（1）扩充执行任务的能力，补充可以为一个或一批异步任务生成Future的方法；（2）提供了管控线程池的方法，比如停止线程池的运行。AbstractExecutorService则是上层的抽象类，将执行任务的流程串联了起来，保证下层的实现只需关注一个执行任务的方法即可。最下层的实现类ThreadPoolExecutor实现最复杂的运行部分，ThreadPoolExecutor将会一方面维护自身的生命周期，另一方面同时管理线程和任务，使两者良好的结合从而执行并行任务。 </p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679733372673.png" alt="1679733372673"></p>
+<p><img src="1679733372673.png"></p>
 <p>线程池在内部实际上构建了一个生产者消费者模型，将线程和任务两者解耦，并不直接关联，从而良好的缓冲任务，复用线程。线程池的运行主要分成两部分：任务管理、线程管理。任务管理部分充当生产者的角色，当任务提交后，线程池会判断该任务后续的流转：（1）直接申请线程执行该任务；（2）缓冲到队列中等待线程执行；（3）拒绝该任务。线程管理部分是消费者，它们被统一维护在线程池内，根据任务请求进行线程的分配，当线程执行完任务后则会继续获取新的任务去执行，最终当线程获取不到任务的时候，线程就会被回收。 </p>
 <h4 id="启动demo"><a href="#启动demo" class="headerlink" title="启动demo"></a>启动demo</h4><p>在该demo中，我们设置了：</p>
 <p>核心线程数 2</p>
 <p>最大线程数 4</p>
 <p>使用ArrayBlockQuene作为阻塞队列，容量为2（因为我们要观察到核心线程跟非核心线程，所以这里我们使用有界队列，==若使用无界的LinkedBlockingQueue, 则只能观察到核心线程在工作，非线程线程将没有机会创建==）</p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679735788411.png" alt="1679735788411"></p>
+<p><img src="1679735788411.png"></p>
 <p>先看结果：可以看到，我们喂了9个任务，最终只有6个任务被执行，多余的任务被拒绝</p>
 <p>解释是： 如果提交的任务数超过了线程池的最大线程数和等待队列的容量之和，并且使用默认的拒绝策略（<code>AbortPolicy</code>），那么所有新提交的任务都将被拒绝并抛出  </p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679735729857.png" alt="1679735729857" style="zoom: 67%;" />
-
-
-
+<p><img src="1679735729857.png"></p>
 <p>从demo中我们可以看到，执行任务的关键入口函数是<code>excute</code>, 那么，我们从这个函数出发来了解线程池的源码, 不过在这之前，我们要对ThreadPoolExecutor中的一些基础属性和方法有所了解。</p>
 <h3 id="前置知识"><a href="#前置知识" class="headerlink" title="-前置知识"></a>-前置知识</h3><h4 id="线程池的状态"><a href="#线程池的状态" class="headerlink" title="线程池的状态"></a>线程池的状态</h4><p>线程池运行的状态，并不是用户显式设置的，而是伴随着线程池的运行，由内部来维护。线程池内部使用一个变量维护两个值：==运行状态(runState)和线程数量 (workerCount)==。在具体实现中，线程池将运行状态(runState)、线程数量 (workerCount)两个关键参数的维护放在了一起 。</p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679747939192.png" alt="1679747939192"></p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679747951874.png" alt="1679747951874"></p>
+<p><img src="1679747939192.png"></p>
+<p><img src="1679747951874.png"></p>
 <p> <code>ctl</code>这个AtomicInteger类型，是对线程池的运行状态和线程池中有效线程的数量进行控制的一个字段， 它同时包含两部分的信息：线程池的运行状态 (runState) 和线程池内有效线程的数量 (workerCount)，==高3位保存runState，低29位保存workerCount==，两个变量之间互不干扰。用一个变量去存储两个值，可避免在做相关决策时，出现不一致的情况，不必为了维护两者的一致，而占用锁资源。 </p>
 <p>线程池一共包含以下五种生命周期状态，涵盖了线程池从启动到终止的这整个范围。线程池的生命周期状态可以按顺序跃迁，但无法反向回转，每个状态的数值大小也是逐步递增的 </p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679748038808.png" alt="1679748038808" style="zoom:80%;" />
-
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679748077197.png" alt="1679748077197"></p>
+<p><img src="1679748038808.png"></p>
+<p><img src="1679748077197.png"></p>
 <p> 其生命周期转换如下入所示 ：</p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679748114374.png" alt="1679748114374"></p>
+<p><img src="1679748114374.png"></p>
 <p> ThreadPoolExecutor 还声明了以下常量来参与以上状态有关的运算</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679748279236.png" alt="1679748279236" style="zoom: 80%;" />
-
+<p><img src="1679748279236.png"></p>
 <p>相应地，根据线程池状态的单向性，ThreadPoolExecutor 还设置了一些简易方法对线程池的状态进行访问和设置</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679748429975.png" alt="1679748429975" style="zoom:67%;" />
-
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679748451888.png" alt="1679748451888" style="zoom:67%;" />
-
-
-
+<p><img src="1679748429975.png"></p>
+<p><img src="1679748451888.png"></p>
 <h3 id="excute"><a href="#excute" class="headerlink" title="-excute"></a>-excute</h3><p>了解了这些前置知识，我们回到线程池对新任务处理的入口<code>excute</code>方法中</p>
 <pre class="line-numbers language-java" data-language="java"><code class="language-java">public void execute(Runnable command) &#123;
     if (command &#x3D;&#x3D; null)
@@ -983,28 +1000,22 @@ if ((wc &gt; maximumPoolSize || (timed &amp;&amp; timedOut))
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h4 id="实验"><a href="#实验" class="headerlink" title="-实验"></a>-实验</h4><p>我们进行一个实验来测试触发<code>interruptIdleWorkers</code>方法后对线程池中线程数的影响</p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679928889753.png" alt="1679928889753"></p>
+<p><img src="1679928889753.png"></p>
 <p>继续沿用最开始的demo, 只不过我们首先缩短了keepAliveTime的时间，使现象更加明显，我们在线程执行任务的代码后添加了两段for语句，使用getPoolSize()函数来获取线程池中的线程数量。</p>
 <p>-调用allowCoreThreadTimeOut，允许回收空闲的核心线程</p>
 <p>运行结果：</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679929132194.png" alt="1679929132194" style="zoom: 67%;" />
-
+<p><img src="1679929132194.png"></p>
 <p>在设置allowCoreThreadTimeOut=true之前，繁忙时线程池创建了3个线程，执行完后保留了2个核心线程，设置之后可以看到，核心线程被回收。</p>
 <p>-调用setCorePoolSize，修改核心线程数为1</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679929298576.png" alt="1679929298576" style="zoom:67%;" />
-
+<p><img src="1679929298576.png"></p>
 <p>-调用setCorePoolSize，修改核心线程数为3</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679929347300.png" alt="1679929347300" style="zoom:67%;" />
-
+<p><img src="1679929347300.png"></p>
 <p>-调用shutdown/shutdownNow</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679929437500.png" alt="1679929437500" style="zoom:67%;" />
-
+<p><img src="1679929437500.png"></p>
 <p>-调用setMaximumPoolSize, 设置最大线程数为3</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679929347300.png" alt="1679929347300" style="zoom:67%;" />
-
+<p><img src="1679929347300.png"></p>
 <p>-调用setMaximumPoolSize, 设置最大线程数为1</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679929546347.png" alt="1679929546347" style="zoom:67%;" />
-
+<p><img src="1679929546347.png"></p>
 <p>可以看到，只要不设置允许回收核心线程，或者将核心线程数改小，即使任务队列为空，核心线程空闲，也不会回收核心线程。</p>
 <h4 id="结论"><a href="#结论" class="headerlink" title="-结论"></a>-结论</h4><p>原因？</p>
 <pre class="line-numbers language-java" data-language="java"><code class="language-java">int c &#x3D; ctl.get();
@@ -1019,7 +1030,8 @@ if (runStateLessThan(c, STOP)) &#123;
     &#125;
     &#x2F;&#x2F; 
     addWorker(null, false);
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+&#125;
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>关键点在于<code>processWorkerExit</code>中的这段代码，在<code>processWorkerExit</code>中确实将传入的worker进行了回收，但它在回收之后进行了补充：</p>
 <p>1.若是被中断的线程，则直接补充一个新线程；</p>
@@ -1066,19 +1078,18 @@ if (runStateLessThan(c, STOP)) &#123;
         &#125;
         &#x2F;&#x2F; else retry on failed CAS
     &#125;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+&#125;
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="任务队列的选择"><a href="#任务队列的选择" class="headerlink" title="-任务队列的选择"></a>-任务队列的选择</h3><p>线程池实现解耦的关键就是有了 <strong>任务队列/阻塞队列</strong> 的存在。线程池中是以<strong>生产者消费者模式+阻塞队列</strong>来实现的，任务队列负责缓存外部提交的任务，线程负责从任务队列取出任务，这样客户端提交的任务就避免了和线程直接关联</p>
 <p>选择不同的阻塞队列可以实现不一样的任务存取策略：</p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679974458012.png" alt="1679974458012"></p>
+<p><img src="1679974458012.png"></p>
 <h3 id="拒绝策略"><a href="#拒绝策略" class="headerlink" title="-拒绝策略"></a>-拒绝策略</h3><p> 被拒绝的任务具体的处理策略则由 <code>RejectedExecutionHandler</code> 来进行定义 、</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679975101869.png" alt="1679975101869" style="zoom: 80%;" />
-
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679975081069.png" alt="1679975081069" style="zoom: 67%;" />
-
+<p><img src="1679975101869.png"></p>
+<p><img src="1679975081069.png"></p>
 <p> 当客户端提交的任务被拒绝时，线程池关联的 RejectedExecutionHandler 对象的 <code>rejectedExecution</code> 方法就会被调用，相应的拒绝策略可以由客户端来指定 </p>
 <p> ThreadPoolExecutor 提供了以下几种拒绝策略，默认使用的是 AbortPolicy </p>
-<p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679975367109.png" alt="1679975367109"></p>
+<p><img src="1679975367109.png"></p>
 <p> 任务的拒绝策略只会在提交任务的时候被触发，即只在 <code>execute(Runnable command)</code> 方法中被触发到。<code>execute(Runnable command)</code> 方法会判断当前状态是否允许接受该任务，如果不允许的话则会走拒绝任务的流程 </p>
 <h3 id="监控线程池的运行状态"><a href="#监控线程池的运行状态" class="headerlink" title="-监控线程池的运行状态"></a>-监控线程池的运行状态</h3><p>ThreadPoolExecutor 提供了多个配置参数以便满足多种不同的需求，这些配置参数包含：<strong>corePoolSize、maximumPoolSize、keepAliveTime、allowCoreThreadTimeOut 等</strong>。但很多时候我们一开始使用线程池时并不知道该如何配置参数才最为适应当前需求，那么就只能通过监控线程池的运行状态来进行考察，最终得到一份最合理的配置参数</p>
 <p>可以通过 ThreadPoolExecutor 的以下几个属性来监控线程池的运行状态：</p>
@@ -1090,10 +1101,9 @@ if (runStateLessThan(c, STOP)) &#123;
 <li><code>getActiveCount</code>()：获取当前正在执行任务的线程总数</li>
 </ol>
 <p>此外，ThreadPoolExecutor 也预留了几个钩子方法可以由子类去实现。通过以下几个方法，就可以实现每个任务开始执行前和执行后，以及线程池走向终止时插入一些自定义的监控代码，以此来实现：<strong>计算任务的平均执行时间、最小执行时间和最大执行时间</strong>等功能</p>
-<img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679975521602.png" alt="1679975521602" style="zoom:67%;" />
-
-<h3 id="总结"><a href="#总结" class="headerlink" title="-总结"></a>-总结</h3><p><img src="C:\Users\14331\Desktop\123\md笔记\线程池源码解析\picture\1679987875121.png" alt="1679987875121"></p>
-<p>作者：业志陈<br>链接：<a target="_blank" rel="noopener" href="https://juejin.cn/post/6901317365561032712">https://juejin.cn/post/6901317365561032712</a><br>来源：稀土掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
+<p><img src="1679975521602.png"></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="-总结"></a>-总结</h3><p><img src="1679987875121.png"></p>
+<h2 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h2><p>链接：<a target="_blank" rel="noopener" href="https://juejin.cn/post/6901317365561032712">https://juejin.cn/post/6901317365561032712</a><br>来源：稀土掘金</p>
 
                 
             </div>
@@ -1157,7 +1167,15 @@ if (runStateLessThan(c, STOP)) &#123;
                 <div class="post-meta__tag-list" style="display: inline-block;">
                     
                         <div class="article-tag">
-                            <span class="chip bg-color">无标签</span>
+                            
+                                <a href="/tags/Thread/">
+                                    <span class="chip bg-color">Thread</span>
+                                </a>
+                            
+                                <a href="/tags/ThreadPool/">
+                                    <span class="chip bg-color">ThreadPool</span>
+                                </a>
+                            
                         </div>
                     
                 </div>
@@ -1234,42 +1252,52 @@ if (runStateLessThan(c, STOP)) &#123;
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/2023/04/18/blog/">
+                <a href="/2023/04/18/ThreadPoolExecutor%E6%BA%90%E7%A0%81/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="blog">
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="ThreadPoolExecutor源码">
                         
-                        <span class="card-title">blog</span>
+                        <span class="card-title">ThreadPoolExecutor源码</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            
+                            线程池是一种基于池化思想管理线程的工具，经常出现在多线程服务器中，使用线程池可以带来一系列好处，本文描述的线程池是JDK中提供的ThreadPoolExecutor类。
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2023-04-18
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2023-04-18
+                            </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-user fa-fw"></i>
-                            Xuan song
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/Thread/" class="post-category">
+                                    Thread
+                                </a>
+                            
                             
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/JVM/">
-                        <span class="chip bg-color">JVM</span>
+                    <a href="/tags/Thread/">
+                        <span class="chip bg-color">Thread</span>
+                    </a>
+                    
+                    <a href="/tags/ThreadPool/">
+                        <span class="chip bg-color">ThreadPool</span>
                     </a>
                     
                 </div>
@@ -1280,22 +1308,22 @@ if (runStateLessThan(c, STOP)) &#123;
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge right-badge text-color">
-                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+                本篇&nbsp;<i class="far fa-dot-circle"></i>
             </div>
             <div class="card">
-                <a href="/2023/04/18/hello-world/">
+                <a href="/2023/04/18/ThreadPoolExecutor%E6%BA%90%E7%A0%81/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="Hello World">
+                        <img src="/medias/featureimages/2.jpg" class="responsive-img" alt="ThreadPoolExecutor源码">
                         
-                        <span class="card-title">Hello World</span>
+                        <span class="card-title">ThreadPoolExecutor源码</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            
+                            线程池是一种基于池化思想管理线程的工具，经常出现在多线程服务器中，使用线程池可以带来一系列好处，本文描述的线程池是JDK中提供的ThreadPoolExecutor类。
                         
                     </div>
                     <div class="publish-info">
@@ -1304,11 +1332,28 @@ if (runStateLessThan(c, STOP)) &#123;
                             </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-user fa-fw"></i>
-                            Xuan song
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/Thread/" class="post-category">
+                                    Thread
+                                </a>
+                            
                             
                         </span>
                     </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Thread/">
+                        <span class="chip bg-color">Thread</span>
+                    </a>
+                    
+                    <a href="/tags/ThreadPool/">
+                        <span class="chip bg-color">ThreadPool</span>
+                    </a>
+                    
                 </div>
                 
             </div>
@@ -1503,6 +1548,9 @@ if (runStateLessThan(c, STOP)) &#123;
             
             <br>
             
+                &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
+                        class="white-color">8.6k</span>
+            
             
             
                 
@@ -1527,13 +1575,13 @@ if (runStateLessThan(c, STOP)) &#123;
             
         </div>
         <div class="col s12 m4 l4 social-link social-statis">
-    <a href="https://github.com/blinkfox" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+    <a href="https://github.com/XS96" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
         <i class="fab fa-github"></i>
     </a>
 
 
 
-    <a href="1433103880@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+    <a href="mailto:1433103880@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
         <i class="fas fa-envelope-open"></i>
     </a>
 
@@ -1543,7 +1591,7 @@ if (runStateLessThan(c, STOP)) &#123;
 
 
 
-    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1181062873" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1181062873" data-position="top" data-delay="50">
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1433103880" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1433103880" data-position="top" data-delay="50">
         <i class="fab fa-qq"></i>
     </a>
 
@@ -1552,10 +1600,6 @@ if (runStateLessThan(c, STOP)) &#123;
 
 
 
-
-    <a href="/atom.xml" class="tooltipped" target="_blank" data-tooltip="RSS 订阅" data-position="top" data-delay="50">
-        <i class="fas fa-rss"></i>
-    </a>
 
 </div>
     </div>
@@ -1714,6 +1758,14 @@ $(function () {
     
 
     <!-- 雪花特效 -->
+     
+        <script type="text/javascript">
+            // 只在桌面版网页启用特效
+            var windowWidth = $(window).width();
+            if (windowWidth > 768) {
+                document.write('<script type="text/javascript" src="/libs/others/snow.js"><\/script>');
+            }
+        </script>
     
 
     <!-- 鼠标星星特效 -->
@@ -1744,8 +1796,6 @@ $(function () {
 </script>
 
     
-    <script src="/libs/others/clicklove.js" async="async"></script>
-    
     
     <script async src="/libs/others/busuanzi.pure.mini.js"></script>
     
@@ -1757,13 +1807,16 @@ $(function () {
     <!--腾讯兔小巢-->
     
     
-
+    <script type="text/javascript" color="0,0,255"
+        pointColor="0,0,255" opacity='0.7'
+        zIndex="-1" count="99"
+        src="/libs/background/canvas-nest.js"></script>
     
 
     
 
     
-    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+
     
 
 </body>

@@ -338,7 +338,7 @@
         <div class="brand">
             <div class="title center-align">
                 
-                    subtitle
+                -星辰大海-
                 
             </div>
 
@@ -351,6 +351,8 @@
                         strings: [ 
                             
                                 "Be a better person, This is our agreement",
+                            
+                                "成为更好的自己!",
                             
                         ],
                         startDelay: 300,
@@ -390,28 +392,19 @@
             <div class="tag-chips">
                 
                 
-                <a href="/tags/tag1/" title="tag1: 1">
+                <a href="/tags/Thread/" title="Thread: 1">
                     <span class="chip center-align waves-effect waves-light
                              chip-default "
-                            data-tagname="tag1" style="background-color: #F9EBEA;">tag1
+                            data-tagname="Thread" style="background-color: #F9EBEA;">Thread
                         <span class="tag-length">1</span>
                     </span>
                 </a>
                 
                 
-                <a href="/tags/tag2/" title="tag2: 1">
+                <a href="/tags/ThreadPool/" title="ThreadPool: 1">
                     <span class="chip center-align waves-effect waves-light
                              chip-default "
-                            data-tagname="tag2" style="background-color: #F5EEF8;">tag2
-                        <span class="tag-length">1</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/tags/JVM/" title="JVM: 1">
-                    <span class="chip center-align waves-effect waves-light
-                             chip-default "
-                            data-tagname="JVM" style="background-color: #D5F5E3;">JVM
+                            data-tagname="ThreadPool" style="background-color: #F5EEF8;">ThreadPool
                         <span class="tag-length">1</span>
                     </span>
                 </a>
@@ -440,7 +433,7 @@
 <script type="text/javascript">
     
 
-    $('#tag-wordcloud').jQCloud([{"text":"tag1","weight":1,"link":"/tags/tag1/"},{"text":"tag2","weight":1,"link":"/tags/tag2/"},{"text":"JVM","weight":1,"link":"/tags/JVM/"}], {
+    $('#tag-wordcloud').jQCloud([{"text":"Thread","weight":1,"link":"/tags/Thread/"},{"text":"ThreadPool","weight":1,"link":"/tags/ThreadPool/"}], {
         autoResize: true
     });
 </script>
@@ -520,6 +513,9 @@
             
             <br>
             
+                &nbsp;<i class="fas fa-chart-area"></i>&nbsp;站点总字数:&nbsp;<span
+                        class="white-color">8.6k</span>
+            
             
             
                 
@@ -544,13 +540,13 @@
             
         </div>
         <div class="col s12 m4 l4 social-link social-statis">
-    <a href="https://github.com/blinkfox" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+    <a href="https://github.com/XS96" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
         <i class="fab fa-github"></i>
     </a>
 
 
 
-    <a href="1433103880@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+    <a href="mailto:1433103880@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
         <i class="fas fa-envelope-open"></i>
     </a>
 
@@ -560,7 +556,7 @@
 
 
 
-    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1181062873" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1181062873" data-position="top" data-delay="50">
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1433103880" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1433103880" data-position="top" data-delay="50">
         <i class="fab fa-qq"></i>
     </a>
 
@@ -569,10 +565,6 @@
 
 
 
-
-    <a href="/atom.xml" class="tooltipped" target="_blank" data-tooltip="RSS 订阅" data-position="top" data-delay="50">
-        <i class="fas fa-rss"></i>
-    </a>
 
 </div>
     </div>
@@ -731,6 +723,14 @@ $(function () {
     
 
     <!-- 雪花特效 -->
+     
+        <script type="text/javascript">
+            // 只在桌面版网页启用特效
+            var windowWidth = $(window).width();
+            if (windowWidth > 768) {
+                document.write('<script type="text/javascript" src="/libs/others/snow.js"><\/script>');
+            }
+        </script>
     
 
     <!-- 鼠标星星特效 -->
@@ -761,8 +761,6 @@ $(function () {
 </script>
 
     
-    <script src="/libs/others/clicklove.js" async="async"></script>
-    
     
     <script async src="/libs/others/busuanzi.pure.mini.js"></script>
     
@@ -774,13 +772,16 @@ $(function () {
     <!--腾讯兔小巢-->
     
     
-
+    <script type="text/javascript" color="0,0,255"
+        pointColor="0,0,255" opacity='0.7'
+        zIndex="-1" count="99"
+        src="/libs/background/canvas-nest.js"></script>
     
 
     
 
     
-    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+
     
 
 </body>
